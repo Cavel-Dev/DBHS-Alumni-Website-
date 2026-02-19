@@ -1,15 +1,18 @@
-﻿const { useState } = React;
+const { useState } = React;
 
-function formatCurrency(value) {
-  const amount = Number(value).toLocaleString("en-JM", {
+const STORE_REGIONS = {
+  jamaica: { label: "Jamaica", symbol: "JMD $", locale: "en-JM", fx: 1 },
+  us: { label: "United States", symbol: "US $", locale: "en-US", fx: 1 / 155 },
+  uk: { label: "United Kingdom", symbol: "GBP ", locale: "en-GB", fx: 1 / 198 }
+};
+
+function formatCurrency(value, region = "jamaica") {
+  const cfg = STORE_REGIONS[region] || STORE_REGIONS.jamaica;
+  const amount = (Number(value || 0) * cfg.fx).toLocaleString(cfg.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
-  return `JMD $${amount}`;
-}
-
-function starText(value) {
-  return "★".repeat(Math.round(value)) + "☆".repeat(5 - Math.round(value));
+  return `${cfg.symbol}${amount}`;
 }
 
 function NotFound() {
@@ -18,25 +21,25 @@ function NotFound() {
       <section className="not-found">
         <h2>Product not found</h2>
         <p>The product you selected does not exist or the link is invalid.</p>
-        <a className="chip-btn" href="./Merch.html">Back to Shop</a>
+        <a className="btn-outline" href="./Merch.html">Back to Shop</a>
       </section>
     </main>
   );
 }
 
-function ProductGallery({ product }) {
-  const shots = ["Front", "Angle", "Detail"];
+function ProductGallery({ product, logoSrc }) {
+  const shots = ["Front", "Side", "Detail", "Back", "Close"];
   const [activeShot, setActiveShot] = useState(0);
 
   return (
-    <section className="media-panel" aria-label="Product images">
+    <section className="gallery-wrap" aria-label="Product images">
       <div className="thumb-column">
-        {shots.map((shot, index) => (
+        {shots.map((shot, idx) => (
           <button
-            type="button"
             key={shot}
-            className={`thumb ${activeShot === index ? "active" : ""}`}
-            onClick={() => setActiveShot(index)}
+            type="button"
+            className={`thumb ${activeShot === idx ? "active" : ""}`}
+            onClick={() => setActiveShot(idx)}
             aria-label={`View ${shot}`}
           >
             {product.code}
@@ -45,35 +48,67 @@ function ProductGallery({ product }) {
       </div>
 
       <div className="hero-shot">
-        <div className={`shirt-canvas shot-${activeShot}`}>
-          <img src="./Assests/image.png" alt="Association logo" className="shirt-logo" />
+        <div className={`product-form shot-${activeShot % 3}`}>
+          <img src={logoSrc} alt="Association logo" className="product-logo" />
+          <span className="product-code">{product.code}</span>
+        </div>
+
+        <div className="hero-nav">
+          <button type="button" onClick={() => setActiveShot((s) => (s === 0 ? shots.length - 1 : s - 1))}>{"<"}</button>
+          <button type="button" onClick={() => setActiveShot((s) => (s + 1) % shots.length)}>{">"}</button>
         </div>
       </div>
     </section>
   );
 }
 
-function ProductMeta({ product, onAdd, onBuy }) {
+function ProductMeta({ product, onAdd, onBuy, region }) {
   const [size, setSize] = useState(product.sizes?.[0] || "One Size");
-  const [color, setColor] = useState("#003f88ff");
+  const [color, setColor] = useState("#f0efe8");
   const [qty, setQty] = useState(1);
+  const [favorited, setFavorited] = useState(false);
 
-  const colors = ["#00296bff", "#003f88ff", "#00509dff", "#fdc500ff", "#ffd500ff"];
+  const colors = ["#f0efe8", "#d9d9d9", "#111111", "#003f88", "#fdc500"];
+  const originalPrice = Math.round(product.price * 1.24);
+  const viewers = 11 + (product.id % 18);
+  const stock = 3 + (product.id % 5);
 
   return (
-    <section className="meta-panel">
-      <p className="crumb">Shop / Product</p>
+    <section className="meta-wrap">
       <h1>{product.name}</h1>
       <p className="sub">{product.subtitle}</p>
 
-      <p className="stars">{starText(product.rating)} <span>{product.rating.toFixed(1)}</span> · {product.reviewCount} reviews</p>
+      <p className="review-row">Rating <span>{product.rating.toFixed(1)}</span> | {product.reviewCount} customer review</p>
+
+      <div className="price-row">
+        <strong>{formatCurrency(product.price, region)}</strong>
+        <del>{formatCurrency(originalPrice, region)}</del>
+        <span className="save-pill">Save 24%</span>
+      </div>
+
+      <p className="live-row">{viewers} viewing right now | only {stock} item(s) left in stock</p>
 
       <div className="selector-group">
-        <div className="selector-head">
-          <span>Select Size</span>
-          <button type="button">Size Guide</button>
+        <h3>Color</h3>
+        <div className="color-row">
+          {colors.map((swatch) => (
+            <button
+              key={swatch}
+              type="button"
+              className={`color-dot ${color === swatch ? "active" : ""}`}
+              style={{ "--swatch": swatch }}
+              onClick={() => setColor(swatch)}
+            />
+          ))}
         </div>
-        <div className="size-row">
+      </div>
+
+      <div className="selector-group">
+        <div className="size-head">
+          <h3>Select Size</h3>
+          <button type="button" className="size-guide">Size guide</button>
+        </div>
+        <div className="size-grid">
           {(product.sizes || ["One Size"]).map((item) => (
             <button
               key={item}
@@ -87,45 +122,23 @@ function ProductMeta({ product, onAdd, onBuy }) {
         </div>
       </div>
 
-      <div className="selector-group">
-        <div className="selector-head"><span>Colors Available</span></div>
-        <div className="color-row">
-          {colors.map((swatch) => (
-            <button
-              key={swatch}
-              type="button"
-              className={`color-dot ${color === swatch ? "active" : ""}`}
-              style={{ "--swatch": swatch }}
-              onClick={() => setColor(swatch)}
-              aria-label={`Color ${swatch}`}
-            ></button>
-          ))}
-        </div>
-      </div>
-
-      <div className="buy-row">
-        <button className="add-cart" type="button" onClick={() => onAdd(size, qty)}>Add to cart</button>
-        <div className="price-pill">{formatCurrency(product.price)}</div>
-      </div>
-
-      <div className="quick-row">
+      <div className="qty-row">
         <label htmlFor="qty">Qty</label>
         <select id="qty" value={qty} onChange={(event) => setQty(Number(event.target.value))}>
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <option key={n} value={n}>{n}</option>
           ))}
         </select>
-        <button className="chip-btn" type="button" onClick={() => onBuy(size, qty)}>Buy now</button>
       </div>
 
-      <div className="feature-grid">
-        <div>🛡 Secure payment</div>
-        <div>🚚 Free shipping</div>
-        <div>📏 Size & fit support</div>
-        <div>↩ Easy returns</div>
-      </div>
+      <button className="btn-primary" type="button" onClick={() => onAdd(size, qty)}>Add to Cart</button>
+      <button className="btn-outline" type="button" onClick={() => setFavorited((v) => !v)}>
+        {favorited ? "Favorited" : "Favorite"}
+      </button>
+      <button className="btn-buy" type="button" onClick={() => onBuy(size, qty)}>Buy Now</button>
 
-      <div className="detail-copy">
+      <div className="about-block">
+        <h3>About the product</h3>
         <p>{product.description}</p>
         <ul>
           {product.details.map((item) => (
@@ -142,10 +155,12 @@ function ProductPage() {
   const productId = Number(params.get("id"));
   const product = PRODUCTS.find((item) => item.id === productId);
   const [notice, setNotice] = useState("");
+  const [logoSrc, setLogoSrc] = useState("./Assests/image-removebg-preview%20(4).png");
+  const [storeRegion] = useState(localStorage.getItem("dbhs_store_region") || "jamaica");
 
   if (!product) return <NotFound />;
 
-  const related = PRODUCTS.filter((item) => item.id !== product.id).slice(0, 3);
+  const related = PRODUCTS.filter((item) => item.id !== product.id).slice(0, 4);
 
   function addToCart(size, qty) {
     setNotice(`Added ${qty} (${size}) to cart.`);
@@ -157,31 +172,43 @@ function ProductPage() {
 
   return (
     <main className="page-shell">
-      <header className="top-nav">
-        <a className="top-brand" href="./Merch.html">DBHS</a>
+      <header className="top-bar">
+        <a className="top-brand" href="./Merch.html">
+          <img
+            src={logoSrc}
+            alt="DBHS logo"
+            onError={() => {
+              if (logoSrc !== "./Assests/image.png") setLogoSrc("./Assests/image.png");
+            }}
+          />
+          <span>DBHS Alumni Merch</span>
+        </a>
+
         <nav>
           <a href="./Merch.html">Home</a>
-          <a href="./Merch.html">Product</a>
-          <a href="./Merch.html">Contact</a>
-          <a href="./Merch.html">FAQ</a>
+          <a href="./Merch.html#shop">Shop</a>
+          <a href="./Merch.html#wishlist">Wishlist</a>
+          <a href="./Merch.html#support">Support</a>
         </nav>
+
+        <div className="top-search">{STORE_REGIONS[storeRegion].label}</div>
       </header>
 
-      <section className="main-card">
-        <ProductGallery product={product} />
-        <ProductMeta product={product} onAdd={addToCart} onBuy={buyNow} />
+      <section className="product-layout">
+        <ProductGallery product={product} logoSrc={logoSrc} />
+        <ProductMeta product={product} onAdd={addToCart} onBuy={buyNow} region={storeRegion} />
       </section>
 
       {notice && <p className="notice">{notice}</p>}
 
       <section className="related-wrap">
-        <h3>You may also like</h3>
+        <h2>You may also like</h2>
         <div className="related-grid">
           {related.map((item) => (
             <a key={item.id} href={`./Product.html?id=${item.id}`} className="related-card">
               <div className="related-media">{item.code}</div>
-              <p>{item.name}</p>
-              <small>{formatCurrency(item.price)}</small>
+              <h3>{item.name}</h3>
+              <p>{formatCurrency(item.price, storeRegion)}</p>
             </a>
           ))}
         </div>
