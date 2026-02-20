@@ -1,10 +1,15 @@
-const { useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const STORE_REGIONS = {
   jamaica: { label: "Jamaica", symbol: "JMD $", locale: "en-JM", fx: 1 },
   us: { label: "United States", symbol: "US $", locale: "en-US", fx: 1 / 155 },
   uk: { label: "United Kingdom", symbol: "GBP ", locale: "en-GB", fx: 1 / 198 }
 };
+
+const PRODUCT_SOURCE =
+  (typeof PRODUCTS !== "undefined" && Array.isArray(PRODUCTS) && PRODUCTS) ||
+  (Array.isArray(window.PRODUCTS) && window.PRODUCTS) ||
+  [];
 
 function formatCurrency(value, region = "jamaica") {
   const cfg = STORE_REGIONS[region] || STORE_REGIONS.jamaica;
@@ -15,136 +20,129 @@ function formatCurrency(value, region = "jamaica") {
   return `${cfg.symbol}${amount}`;
 }
 
+function buildUnsplash(seed, query, width = 1200, height = 900) {
+  const photoIds = [
+    "1529139574466-a303027c1d8b",
+    "1483985988355-763728e1935b",
+    "1464863979621-258859e62245",
+    "1503341504253-dff4815485f1",
+    "1496747611176-843222e1e57c",
+    "1521572267360-ee0c2909d518",
+    "1487412720507-e7ab37603c6f",
+    "1515886657613-9f3515b0c78f"
+  ];
+  const hash = String(seed || "0").split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const id = photoIds[hash % photoIds.length];
+  const safeQuery = encodeURIComponent(query || "fashion product black minimal");
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${width}&h=${height}&q=80&query=${safeQuery}`;
+}
+
+function getProductImages(product) {
+  const base = `${product.category || "apparel"} ${product.name || "merch"} black minimal product photo`;
+  return [
+    buildUnsplash(`${product.id}-1`, `${base} hero`, 1300, 920),
+    buildUnsplash(`${product.id}-2`, `${base} closeup`, 680, 680),
+    buildUnsplash(`${product.id}-3`, `${base} side`, 680, 680),
+    buildUnsplash(`${product.id}-4`, `${base} studio`, 680, 680)
+  ];
+}
+
+function mapSupabaseProduct(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category || "General",
+    price: Number(row.price_jmd || 0),
+    subtitle: row.subtitle || "Official alumni merchandise",
+    code: row.code || "DBHS",
+    description: row.description || "Official DBHS alumni product.",
+    details: Array.isArray(row.details) && row.details.length ? row.details : ["Official alumni product", "Member-only store item"],
+    sizes: Array.isArray(row.sizes) && row.sizes.length ? row.sizes : ["One Size"],
+    rating: Number(row.rating || 4.7),
+    reviewCount: Number(row.review_count || 24)
+  };
+}
+
 function NotFound() {
   return (
-    <main className="page-shell">
-      <section className="not-found">
+    <main className="product-page">
+      <section className="missing">
         <h2>Product not found</h2>
-        <p>The product you selected does not exist or the link is invalid.</p>
-        <a className="btn-outline" href="./Merch.html">Back to Shop</a>
+        <p>The product you selected does not exist.</p>
+        <a href="./Merch.html">Back to shop</a>
       </section>
     </main>
   );
 }
 
-function ProductGallery({ product, logoSrc }) {
-  const shots = ["Front", "Side", "Detail", "Back", "Close"];
+function ProductExperience({ product, region, onAdd, onBuy }) {
+  const images = useMemo(() => getProductImages(product), [product]);
   const [activeShot, setActiveShot] = useState(0);
-
-  return (
-    <section className="gallery-wrap" aria-label="Product images">
-      <div className="thumb-column">
-        {shots.map((shot, idx) => (
-          <button
-            key={shot}
-            type="button"
-            className={`thumb ${activeShot === idx ? "active" : ""}`}
-            onClick={() => setActiveShot(idx)}
-            aria-label={`View ${shot}`}
-          >
-            {product.code}
-          </button>
-        ))}
-      </div>
-
-      <div className="hero-shot">
-        <div className={`product-form shot-${activeShot % 3}`}>
-          <img src={logoSrc} alt="Association logo" className="product-logo" />
-          <span className="product-code">{product.code}</span>
-        </div>
-
-        <div className="hero-nav">
-          <button type="button" onClick={() => setActiveShot((s) => (s === 0 ? shots.length - 1 : s - 1))}>{"<"}</button>
-          <button type="button" onClick={() => setActiveShot((s) => (s + 1) % shots.length)}>{">"}</button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ProductMeta({ product, onAdd, onBuy, region }) {
   const [size, setSize] = useState(product.sizes?.[0] || "One Size");
-  const [color, setColor] = useState("#f0efe8");
   const [qty, setQty] = useState(1);
-  const [favorited, setFavorited] = useState(false);
-
-  const colors = ["#f0efe8", "#d9d9d9", "#111111", "#003f88", "#fdc500"];
-  const originalPrice = Math.round(product.price * 1.24);
-  const viewers = 11 + (product.id % 18);
-  const stock = 3 + (product.id % 5);
+  const primary = product.name || "legacy steel black sport pro strap";
+  const words = primary.split(" ");
+  const splitA = words.slice(0, 2).join(" ");
+  const splitB = words.slice(2, 4).join(" ");
+  const splitC = words.slice(4).join(" ") || "strap";
 
   return (
-    <section className="meta-wrap">
-      <h1>{product.name}</h1>
-      <p className="sub">{product.subtitle}</p>
+    <section className="focus-layout">
+      <div className="focus-left">
+        <a className="back-home" href="./Merch.html">back to home</a>
+        <h1>
+          <span>{splitA}</span>
+          <span><mark>{splitB || "black sport pro"}</mark></span>
+          <span><mark>{splitC}</mark></span>
+        </h1>
+        <p className="subtitle">{product.description}</p>
 
-      <p className="review-row">Rating <span>{product.rating.toFixed(1)}</span> | {product.reviewCount} customer review</p>
-
-      <div className="price-row">
-        <strong>{formatCurrency(product.price, region)}</strong>
-        <del>{formatCurrency(originalPrice, region)}</del>
-        <span className="save-pill">Save 24%</span>
-      </div>
-
-      <p className="live-row">{viewers} viewing right now | only {stock} item(s) left in stock</p>
-
-      <div className="selector-group">
-        <h3>Color</h3>
-        <div className="color-row">
-          {colors.map((swatch) => (
-            <button
-              key={swatch}
-              type="button"
-              className={`color-dot ${color === swatch ? "active" : ""}`}
-              style={{ "--swatch": swatch }}
-              onClick={() => setColor(swatch)}
-            />
-          ))}
+        <div className="review-stack">
+          <div className="avatars">
+            {images.slice(1, 4).map((src) => <img key={src} src={src} alt="" />)}
+          </div>
+          <span>product reviews</span>
+          <strong>{product.rating.toFixed(1)}</strong>
         </div>
-      </div>
 
-      <div className="selector-group">
-        <div className="size-head">
-          <h3>Select Size</h3>
-          <button type="button" className="size-guide">Size guide</button>
+        <div className="buy-row">
+          <strong>{formatCurrency(product.price, region)}</strong>
+          <button type="button" onClick={() => onAdd(size, qty)}>add to cart</button>
+          <button type="button" className="buy-now" onClick={() => onBuy(size, qty)}>buy now</button>
         </div>
-        <div className="size-grid">
-          {(product.sizes || ["One Size"]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`size-pill ${size === item ? "active" : ""}`}
-              onClick={() => setSize(item)}
-            >
-              {item}
-            </button>
-          ))}
+
+        <div className="select-row">
+          <label>
+            size
+            <select value={size} onChange={(e) => setSize(e.target.value)}>
+              {(product.sizes || ["One Size"]).map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label>
+            qty
+            <select value={qty} onChange={(e) => setQty(Number(e.target.value))}>
+              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
         </div>
-      </div>
 
-      <div className="qty-row">
-        <label htmlFor="qty">Qty</label>
-        <select id="qty" value={qty} onChange={(event) => setQty(Number(event.target.value))}>
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-      </div>
-
-      <button className="btn-primary" type="button" onClick={() => onAdd(size, qty)}>Add to Cart</button>
-      <button className="btn-outline" type="button" onClick={() => setFavorited((v) => !v)}>
-        {favorited ? "Favorited" : "Favorite"}
-      </button>
-      <button className="btn-buy" type="button" onClick={() => onBuy(size, qty)}>Buy Now</button>
-
-      <div className="about-block">
-        <h3>About the product</h3>
-        <p>{product.description}</p>
-        <ul>
-          {product.details.map((item) => (
-            <li key={item}>{item}</li>
+        <ul className="style-list">
+          {(product.details || []).slice(0, 3).map((item, idx) => (
+            <li key={item}><b>{String(idx + 1).padStart(2, "0")}.</b> {item}</li>
           ))}
         </ul>
+      </div>
+
+      <div className="focus-right">
+        <div className="shot-wrap">
+          <span className="tag">best seller</span>
+          <img src={images[activeShot]} alt={product.name} />
+          <div className="shot-footer">
+            {images.map((src, idx) => (
+              <button key={src} type="button" className={activeShot === idx ? "active" : ""} onClick={() => setActiveShot(idx)} />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -153,66 +151,84 @@ function ProductMeta({ product, onAdd, onBuy, region }) {
 function ProductPage() {
   const params = new URLSearchParams(window.location.search);
   const productId = Number(params.get("id"));
-  const product = PRODUCTS.find((item) => item.id === productId);
+
+  const [productsData, setProductsData] = useState(PRODUCT_SOURCE);
+  const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
-  const [logoSrc, setLogoSrc] = useState("./Assests/image-removebg-preview%20(4).png");
   const [storeRegion] = useState(localStorage.getItem("dbhs_store_region") || "jamaica");
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProductsFromSupabase() {
+      if (!window.dbhsSupabase) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await window.dbhsSupabase
+        .from("merch_products")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      if (!cancelled && !error && data && data.length > 0) {
+        setProductsData(data.map(mapSupabaseProduct));
+      }
+
+      if (!cancelled) setLoading(false);
+    }
+
+    loadProductsFromSupabase();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const product = productsData.find((item) => Number(item.id) === productId);
+
+  if (loading && !product) return <main className="product-page"><section className="missing"><h2>Loading product...</h2></section></main>;
   if (!product) return <NotFound />;
 
-  const related = PRODUCTS.filter((item) => item.id !== product.id).slice(0, 4);
-
   function addToCart(size, qty) {
+    const existing = JSON.parse(localStorage.getItem("dbhs_merch_cart") || "{}");
+    const next = { ...existing, [product.id]: (Number(existing[product.id]) || 0) + qty };
+    localStorage.setItem("dbhs_merch_cart", JSON.stringify(next));
     setNotice(`Added ${qty} (${size}) to cart.`);
   }
 
   function buyNow(size, qty) {
-    setNotice(`Checkout started for ${qty} (${size}).`);
+    const existing = JSON.parse(localStorage.getItem("dbhs_merch_cart") || "{}");
+    const next = { ...existing, [product.id]: (Number(existing[product.id]) || 0) + qty };
+    localStorage.setItem("dbhs_merch_cart", JSON.stringify(next));
+    window.location.href = "./Checkout.html";
   }
 
   return (
-    <main className="page-shell">
-      <header className="top-bar">
-        <a className="top-brand" href="./Merch.html">
-          <img
-            src={logoSrc}
-            alt="DBHS logo"
-            onError={() => {
-              if (logoSrc !== "./Assests/image.png") setLogoSrc("./Assests/image.png");
-            }}
-          />
-          <span>DBHS Alumni Merch</span>
-        </a>
-
-        <nav>
-          <a href="./Merch.html">Home</a>
-          <a href="./Merch.html#shop">Shop</a>
-          <a href="./Merch.html#wishlist">Wishlist</a>
-          <a href="./Merch.html#support">Support</a>
-        </nav>
-
-        <div className="top-search">{STORE_REGIONS[storeRegion].label}</div>
+    <main className="product-page">
+      <header className="pro-top">
+        <div className="left-filters">
+          <select><option>straps</option></select>
+          <select><option>accessories</option></select>
+        </div>
+        <a className="pro-logo" href="./Merch.html">pro straps</a>
+        <div className="right-tools">
+          <input type="search" placeholder="search..." />
+          <a href="./Checkout.html">cart</a>
+          <span>0</span>
+          <button type="button" onClick={() => window.location.href = "./Merch.html"}>Menu</button>
+        </div>
       </header>
 
-      <section className="product-layout">
-        <ProductGallery product={product} logoSrc={logoSrc} />
-        <ProductMeta product={product} onAdd={addToCart} onBuy={buyNow} region={storeRegion} />
+      <ProductExperience product={product} region={storeRegion} onAdd={addToCart} onBuy={buyNow} />
+
+      <section className="bottom-tabs">
+        <button type="button">01 details</button>
+        <button type="button">02 reviews</button>
+        <button type="button">03 delivery</button>
       </section>
 
       {notice && <p className="notice">{notice}</p>}
-
-      <section className="related-wrap">
-        <h2>You may also like</h2>
-        <div className="related-grid">
-          {related.map((item) => (
-            <a key={item.id} href={`./Product.html?id=${item.id}`} className="related-card">
-              <div className="related-media">{item.code}</div>
-              <h3>{item.name}</h3>
-              <p>{formatCurrency(item.price, storeRegion)}</p>
-            </a>
-          ))}
-        </div>
-      </section>
     </main>
   );
 }
