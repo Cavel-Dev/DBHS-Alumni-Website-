@@ -1,137 +1,82 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Member Authentication | DBHS Alumni Merch</title>
+  <title>Login | DBHS Alumni Merch</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./auth.css">
 </head>
 <body>
-  <main class="auth-layout">
-    <section class="visual-side" aria-hidden="true">
-      <div class="visual-overlay"></div>
-      <article class="float-card card-1">
-        <h3>New Income</h3>
-        <p>JMD $40,832.32</p>
-        <span>for alumni merch this month</span>
-      </article>
-
-      <article class="float-card card-2">
-        <h3>Wishlist Adds</h3>
-        <p>3,259</p>
-        <span>high intent product saves</span>
-      </article>
-
-      <article class="float-card card-3">
-        <h3>Verified Members</h3>
-        <p>48</p>
-        <span>Class of 2024, Jamaica Chapter</span>
-      </article>
-
-      <article class="float-card card-4">
-        <h3>Orders Today</h3>
-        <p>218</p>
-        <span>member-only checkout enabled</span>
-      </article>
-
-      <div class="logo-badge">
-        <img src="./Assests/image-removebg-preview%20(4).png" alt="DBHS Alumni Association logo">
-      </div>
-    </section>
-
-    <section class="auth-side">
-      <div class="auth-content">
+  <main class="auth-page">
+    <section class="auth-shell">
+      <section class="auth-card">
         <div class="auth-top-logo">
           <img src="./Assests/image-removebg-preview%20(4).png" alt="DBHS Alumni Association logo">
         </div>
-        <h1>Sign in to DBHS Alumni Merch</h1>
-        <p class="auth-subtitle">Member verification required for access.</p>
+
+        <h2>DBHS Alumni Merch</h2>
+        <p class="auth-subtitle">Login or sign up to continue.</p>
 
         <div class="auth-switch" role="tablist" aria-label="Authentication mode">
           <button id="showSignupBtn" class="switch-btn active" type="button" role="tab" aria-selected="true">Sign Up</button>
           <button id="showLoginBtn" class="switch-btn" type="button" role="tab" aria-selected="false">Login</button>
         </div>
 
-        <div id="status" class="status"></div>
+        <div id="status" class="status" aria-live="polite"></div>
 
-        <form id="emailForm" class="form-block">
-          <h2>Sign Up</h2>
-          <label for="email">Alumni Email</label>
-          <input id="email" type="email" required placeholder="you@example.com">
-          <button type="submit">Check Email</button>
-          <div class="divider"><span>Or sign up faster with</span></div>
-          <button type="button" class="social-btn" data-provider="google">
-            <img src="./Assests/icons8-google.svg" alt="" aria-hidden="true">
-            <span>Google</span>
-          </button>
-          <button type="button" class="social-btn" data-provider="apple">
-            <img src="./Assests/icons8-apple.svg" alt="" aria-hidden="true">
-            <span>Apple</span>
-          </button>
-          <p class="icon-credit">
-            <a target="_blank" href="https://icons8.com/icon/17949/google" rel="noopener noreferrer">Google</a>
-            icon by
-            <a target="_blank" href="https://icons8.com" rel="noopener noreferrer">Icons8</a>
-            ·
-            <a target="_blank" href="https://icons8.com/icon/30840/apple-inc" rel="noopener noreferrer">Apple</a>
-            icon by
-            <a target="_blank" href="https://icons8.com" rel="noopener noreferrer">Icons8</a>
-          </p>
-        </form>
+        <form id="signupForm" class="form-block">
+          <h3>Create account</h3>
+          <label for="signupEmail">Email</label>
+          <input id="signupEmail" type="email" required placeholder="you@example.com">
 
-        <form id="codeForm" class="form-block hidden">
-          <h2>Verify Email</h2>
-          <label for="code">Verification Code</label>
-          <input id="code" type="text" inputmode="numeric" required placeholder="6-digit code">
-          <button type="submit">Verify Code</button>
-        </form>
+          <label for="signupPassword">Password</label>
+          <input id="signupPassword" type="password" minlength="8" required placeholder="At least 8 characters">
 
-        <form id="passwordForm" class="form-block hidden">
-          <h2>Create Password</h2>
-          <label for="password">Password</label>
-          <input id="password" type="password" minlength="8" required placeholder="At least 8 characters">
-          <label for="confirmPassword">Confirm Password</label>
-          <input id="confirmPassword" type="password" minlength="8" required placeholder="Repeat password">
-          <button type="submit">Save Password</button>
+          <label for="signupMembershipId">Membership ID</label>
+          <input id="signupMembershipId" type="text" required placeholder="ID from your membership certificate">
+          <p class="note">Enter the Membership ID shown on your alumni membership certificate.</p>
+
+          <label for="signupConfirmPassword">Confirm password</label>
+          <input id="signupConfirmPassword" type="password" minlength="8" required placeholder="Repeat password">
+
+          <button type="submit">Create Account</button>
         </form>
 
         <form id="loginForm" class="form-block hidden">
-          <h2>Login</h2>
+          <h3>Login</h3>
           <label for="loginEmail">Email</label>
           <input id="loginEmail" type="email" required placeholder="you@example.com">
+
           <label for="loginPassword">Password</label>
           <input id="loginPassword" type="password" required placeholder="Enter your password">
-          <div class="row-inline">
-            <label class="remember">
-              <input id="rememberMe" type="checkbox" checked>
-              Remember me
-            </label>
-            <button type="button" class="muted-link" disabled>Forgot password?</button>
-          </div>
-          <button type="submit">Sign In to Merch Store</button>
-          <div class="divider"><span>Or login with</span></div>
-          <button type="button" class="social-btn" data-provider="google">
-            <img src="./Assests/icons8-google.svg" alt="" aria-hidden="true">
-            <span>Google</span>
-          </button>
-          <button type="button" class="social-btn" data-provider="apple">
-            <img src="./Assests/icons8-apple.svg" alt="" aria-hidden="true">
-            <span>Apple</span>
-          </button>
-          <p class="icon-credit">
-            <a target="_blank" href="https://icons8.com/icon/17949/google" rel="noopener noreferrer">Google</a>
-            icon by
-            <a target="_blank" href="https://icons8.com" rel="noopener noreferrer">Icons8</a>
-            ·
-            <a target="_blank" href="https://icons8.com/icon/30840/apple-inc" rel="noopener noreferrer">Apple</a>
-            icon by
-            <a target="_blank" href="https://icons8.com" rel="noopener noreferrer">Icons8</a>
-          </p>
+
+          <label class="remember">
+            <input id="rememberMe" type="checkbox" checked>
+            Remember me
+          </label>
+
+          <button type="submit">Sign In</button>
         </form>
-      </div>
+      </section>
+
+      <aside class="auth-showcase">
+        <div class="showcase-badge">DBHS Alumni Association</div>
+        <h1>Welcome Back</h1>
+        <p>Member-only access for alumni shopping, chapter updates, and reunion checkout.</p>
+        <div class="showcase-cards">
+          <article>
+            <strong>Secure Access</strong>
+            <span>Supabase authentication with session protection.</span>
+          </article>
+          <article>
+            <strong>Membership ID Required</strong>
+            <span>Use the Membership ID printed on your official membership certificate.</span>
+          </article>
+        </div>
+      </aside>
     </section>
   </main>
 

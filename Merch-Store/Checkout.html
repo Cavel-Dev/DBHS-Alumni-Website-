@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | DBHS Alumni Merch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./checkout.css">
+</head>
+<body>
+  <main class="checkout-page wrap">
+    <header class="checkout-head">
+      <a href="./Merch.html" class="back-link">Back to Store</a>
+      <h1>Checkout</h1>
+      <p>Review your cart and place your order.</p>
+    </header>
+
+    <section class="checkout-grid">
+      <article class="panel cart-panel">
+        <div class="panel-head">
+          <h2>Your Cart</h2>
+          <button id="clearCartBtn" type="button" class="ghost-btn">Clear Cart</button>
+        </div>
+        <div id="cartList" class="cart-list" aria-live="polite"></div>
+      </article>
+
+      <aside class="panel summary-panel">
+        <h2>Order Summary</h2>
+        <label class="field">
+          Store region
+          <select id="regionSelect">
+            <option value="jamaica">Jamaica</option>
+            <option value="us">United States</option>
+            <option value="uk">United Kingdom</option>
+          </select>
+        </label>
+        <div class="line"><span>Subtotal</span><strong id="subtotalValue">JMD $0.00</strong></div>
+        <div class="line"><span>Shipping</span><strong id="shippingValue">JMD $0.00</strong></div>
+        <div class="line total"><span>Total</span><strong id="totalValue">JMD $0.00</strong></div>
+        <button id="placeOrderBtn" type="button" class="checkout-btn">Place Order</button>
+        <a href="./Merch.html" class="ghost-link">Continue Shopping</a>
+        <p id="status" class="status" aria-live="polite"></p>
+      </aside>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./auth-guard.js"></script>
+  <script src="./products.js"></script>
+  <script src="./checkout.js"></script>
+</body>
+</html>
