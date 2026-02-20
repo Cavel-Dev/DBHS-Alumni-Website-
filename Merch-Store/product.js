@@ -33,18 +33,20 @@ function buildUnsplash(seed, query, width = 1200, height = 900) {
   ];
   const hash = String(seed || "0").split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   const id = photoIds[hash % photoIds.length];
-  const safeQuery = encodeURIComponent(query || "fashion product black minimal");
+  const safeQuery = encodeURIComponent(query || "alumni apparel product");
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${width}&h=${height}&q=80&query=${safeQuery}`;
 }
 
 function getProductImages(product) {
-  const base = `${product.category || "apparel"} ${product.name || "merch"} black minimal product photo`;
-  return [
-    buildUnsplash(`${product.id}-1`, `${base} hero`, 1300, 920),
+  const base = `${product.category || "apparel"} ${product.name || "merch"} alumni product studio`;
+  const generated = [
+    buildUnsplash(`${product.id}-1`, `${base} hero`, 1200, 900),
     buildUnsplash(`${product.id}-2`, `${base} closeup`, 680, 680),
-    buildUnsplash(`${product.id}-3`, `${base} side`, 680, 680),
-    buildUnsplash(`${product.id}-4`, `${base} studio`, 680, 680)
+    buildUnsplash(`${product.id}-3`, `${base} detail`, 680, 680),
+    buildUnsplash(`${product.id}-4`, `${base} lifestyle`, 680, 680)
   ];
+  if (product.image_url) return [product.image_url, ...generated.slice(1)];
+  return generated;
 }
 
 function mapSupabaseProduct(row) {
@@ -59,7 +61,8 @@ function mapSupabaseProduct(row) {
     details: Array.isArray(row.details) && row.details.length ? row.details : ["Official alumni product", "Member-only store item"],
     sizes: Array.isArray(row.sizes) && row.sizes.length ? row.sizes : ["One Size"],
     rating: Number(row.rating || 4.7),
-    reviewCount: Number(row.review_count || 24)
+    reviewCount: Number(row.review_count || 24),
+    image_url: row.image_url || null
   };
 }
 
@@ -68,83 +71,102 @@ function NotFound() {
     <main className="product-page">
       <section className="missing">
         <h2>Product not found</h2>
-        <p>The product you selected does not exist.</p>
+        <p>The product you selected does not exist or link is invalid.</p>
         <a href="./Merch.html">Back to shop</a>
       </section>
     </main>
   );
 }
 
-function ProductExperience({ product, region, onAdd, onBuy }) {
+function ProductDetails({ product, region, onAdd, onBuy }) {
   const images = useMemo(() => getProductImages(product), [product]);
   const [activeShot, setActiveShot] = useState(0);
   const [size, setSize] = useState(product.sizes?.[0] || "One Size");
   const [qty, setQty] = useState(1);
-  const primary = product.name || "legacy steel black sport pro strap";
-  const words = primary.split(" ");
-  const splitA = words.slice(0, 2).join(" ");
-  const splitB = words.slice(2, 4).join(" ");
-  const splitC = words.slice(4).join(" ") || "strap";
+  const [tab, setTab] = useState("details");
 
   return (
-    <section className="focus-layout">
-      <div className="focus-left">
-        <a className="back-home" href="./Merch.html">back to home</a>
-        <h1>
-          <span>{splitA}</span>
-          <span><mark>{splitB || "black sport pro"}</mark></span>
-          <span><mark>{splitC}</mark></span>
-        </h1>
-        <p className="subtitle">{product.description}</p>
-
-        <div className="review-stack">
-          <div className="avatars">
-            {images.slice(1, 4).map((src) => <img key={src} src={src} alt="" />)}
+    <>
+      <section className="product-main">
+        <section className="gallery">
+          <div className="hero-shot">
+            <img src={images[activeShot]} alt={product.name} />
+            <span className="badge">{product.code || "DBHS"}</span>
           </div>
-          <span>product reviews</span>
-          <strong>{product.rating.toFixed(1)}</strong>
-        </div>
-
-        <div className="buy-row">
-          <strong>{formatCurrency(product.price, region)}</strong>
-          <button type="button" onClick={() => onAdd(size, qty)}>add to cart</button>
-          <button type="button" className="buy-now" onClick={() => onBuy(size, qty)}>buy now</button>
-        </div>
-
-        <div className="select-row">
-          <label>
-            size
-            <select value={size} onChange={(e) => setSize(e.target.value)}>
-              {(product.sizes || ["One Size"]).map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-          <label>
-            qty
-            <select value={qty} onChange={(e) => setQty(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-        </div>
-
-        <ul className="style-list">
-          {(product.details || []).slice(0, 3).map((item, idx) => (
-            <li key={item}><b>{String(idx + 1).padStart(2, "0")}.</b> {item}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="focus-right">
-        <div className="shot-wrap">
-          <span className="tag">best seller</span>
-          <img src={images[activeShot]} alt={product.name} />
-          <div className="shot-footer">
+          <div className="thumb-row">
             {images.map((src, idx) => (
-              <button key={src} type="button" className={activeShot === idx ? "active" : ""} onClick={() => setActiveShot(idx)} />
+              <button key={src} type="button" className={activeShot === idx ? "active" : ""} onClick={() => setActiveShot(idx)}>
+                <img src={src} alt="" aria-hidden="true" />
+              </button>
             ))}
           </div>
+        </section>
+
+        <section className="meta">
+          <p className="crumb">{product.category} / Product Detail</p>
+          <h1>{product.name}</h1>
+          <p className="subtitle">{product.subtitle}</p>
+
+          <p className="rating">{product.rating.toFixed(1)} rating • {product.reviewCount} reviews</p>
+          <div className="price">{formatCurrency(product.price, region)}</div>
+
+          <div className="selectors">
+            <label>
+              Size
+              <select value={size} onChange={(e) => setSize(e.target.value)}>
+                {(product.sizes || ["One Size"]).map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Quantity
+              <select value={qty} onChange={(e) => setQty(Number(e.target.value))}>
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="actions">
+            <button type="button" className="btn-add" onClick={() => onAdd(size, qty)}>Add to Cart</button>
+            <button type="button" className="btn-buy" onClick={() => onBuy(size, qty)}>Buy Now</button>
+          </div>
+        </section>
+      </section>
+
+      <section className="tabs">
+        <div className="tab-head">
+          <button type="button" className={tab === "details" ? "active" : ""} onClick={() => setTab("details")}>Details</button>
+          <button type="button" className={tab === "reviews" ? "active" : ""} onClick={() => setTab("reviews")}>Reviews</button>
+          <button type="button" className={tab === "delivery" ? "active" : ""} onClick={() => setTab("delivery")}>Delivery</button>
         </div>
-      </div>
-    </section>
+
+        {tab === "details" && (
+          <div className="tab-body">
+            <p>{product.description}</p>
+            <ul>
+              {(product.details || []).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {tab === "reviews" && (
+          <div className="tab-body">
+            <p>Members rate this item highly for quality and fit.</p>
+            <p>Average rating: {product.rating.toFixed(1)} from {product.reviewCount} reviews.</p>
+          </div>
+        )}
+
+        {tab === "delivery" && (
+          <div className="tab-body">
+            <p>Standard delivery: 3-7 business days.</p>
+            <p>Express delivery options available at checkout.</p>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -155,7 +177,8 @@ function ProductPage() {
   const [productsData, setProductsData] = useState(PRODUCT_SOURCE);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
-  const [storeRegion] = useState(localStorage.getItem("dbhs_store_region") || "jamaica");
+  const [logoSrc, setLogoSrc] = useState("./Assests/image-removebg-preview%20(4).png");
+  const [storeRegion, setStoreRegion] = useState(localStorage.getItem("dbhs_store_region") || "jamaica");
 
   useEffect(() => {
     let cancelled = false;
@@ -186,6 +209,7 @@ function ProductPage() {
   }, []);
 
   const product = productsData.find((item) => Number(item.id) === productId);
+  const related = productsData.filter((item) => Number(item.id) !== productId).slice(0, 4);
 
   if (loading && !product) return <main className="product-page"><section className="missing"><h2>Loading product...</h2></section></main>;
   if (!product) return <NotFound />;
@@ -206,26 +230,44 @@ function ProductPage() {
 
   return (
     <main className="product-page">
-      <header className="pro-top">
-        <div className="left-filters">
-          <select><option>straps</option></select>
-          <select><option>accessories</option></select>
-        </div>
-        <a className="pro-logo" href="./Merch.html">pro straps</a>
-        <div className="right-tools">
-          <input type="search" placeholder="search..." />
-          <a href="./Checkout.html">cart</a>
-          <span>0</span>
-          <button type="button" onClick={() => window.location.href = "./Merch.html"}>Menu</button>
+      <header className="top-bar">
+        <a className="brand" href="./Merch.html">
+          <img
+            src={logoSrc}
+            alt="DBHS Alumni Association logo"
+            onError={() => {
+              if (logoSrc !== "./Assests/image.png") setLogoSrc("./Assests/image.png");
+            }}
+          />
+          <span>DBHS Alumni Association</span>
+        </a>
+
+        <div className="top-actions">
+          <select value={storeRegion} onChange={(e) => setStoreRegion(e.target.value)}>
+            <option value="jamaica">Jamaica</option>
+            <option value="us">US</option>
+            <option value="uk">UK</option>
+          </select>
+          <a href="./Checkout.html">Checkout</a>
+          <a href="./Merch.html">Back to Shop</a>
         </div>
       </header>
 
-      <ProductExperience product={product} region={storeRegion} onAdd={addToCart} onBuy={buyNow} />
+      <ProductDetails product={product} region={storeRegion} onAdd={addToCart} onBuy={buyNow} />
 
-      <section className="bottom-tabs">
-        <button type="button">01 details</button>
-        <button type="button">02 reviews</button>
-        <button type="button">03 delivery</button>
+      <section className="related">
+        <h3>Related products</h3>
+        <div className="related-grid">
+          {related.map((item, idx) => (
+            <a key={item.id} href={`./Product.html?id=${item.id}`} className="related-card">
+              <img src={getProductImages(item)[0] || buildUnsplash(`rel-${idx}`, item.name, 520, 360)} alt={item.name} />
+              <div>
+                <strong>{item.name}</strong>
+                <span>{formatCurrency(item.price, storeRegion)}</span>
+              </div>
+            </a>
+          ))}
+        </div>
       </section>
 
       {notice && <p className="notice">{notice}</p>}
